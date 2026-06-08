@@ -1,0 +1,35 @@
+# Env
+.env
+*.local
+
+# Go
+bin/
+*.exe
+*.test
+*.out
+
+# .NET
+bin/
+obj/
+*.user
+
+# Node / NestJS
+node_modules/
+dist/
+*.log
+npm-debug.log*
+
+# Java
+target/
+*.class
+.gradle/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Docker volumes (nếu mount local)
+.data/

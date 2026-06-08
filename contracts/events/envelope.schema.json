@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ecommerce-micro/contracts/events/envelope.schema.json",
+  "title": "Event Envelope",
+  "description": "Mọi event publish lên Kafka phải bọc trong envelope này.",
+  "type": "object",
+  "required": [
+    "eventId",
+    "eventName",
+    "eventVersion",
+    "occurredAt",
+    "source",
+    "correlationId",
+    "data"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID duy nhất của event. Dùng cho idempotency/inbox dedup."
+    },
+    "eventName": {
+      "type": "string",
+      "description": "Tên event, vd OrderCreated. Xem event-names.md."
+    },
+    "eventVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version schema của event, tăng khi breaking change."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Thời điểm event xảy ra (UTC, ISO 8601)."
+    },
+    "source": {
+      "type": "string",
+      "description": "Service phát ra event, vd order-service."
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID xuyên suốt một luồng nghiệp vụ (checkout...). Trace end-to-end."
+    },
+    "causationId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "eventId của event đã gây ra event này. Dựng được chuỗi nhân quả."
+    },
+    "data": {
+      "type": "object",
+      "description": "Payload riêng của từng loại event."
+    }
+  },
+  "additionalProperties": false
+}
