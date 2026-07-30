@@ -1,35 +1,50 @@
-# Env
 .env
+.env.*
+!.env.example
 *.local
 
-# Go
-bin/
-*.exe
-*.test
-*.out
+appsettings.json
+!appsettings.example.json
 
-# .NET
-bin/
-obj/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+artifacts/
+*.binlog
+
 *.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.DotSettings.user
 
-# Node / NestJS
-node_modules/
-dist/
-*.log
-npm-debug.log*
+[Tt]est[Rr]esults/
+*.trx
+*.coverage
+coverage*.json
+coverage*.xml
 
-# Java
-target/
-*.class
-.gradle/
-build/
+*.nupkg
+*.snupkg
 
-# IDE
 .idea/
 .vscode/
 *.swp
+*~
 .DS_Store
 
-# Docker volumes (nếu mount local)
 .data/
+
+*.log
+logs/
+
+.claude/
+.agents/
+CLAUDE.md
+skills-lock.json
+
+# Cache cục bộ của tool index code, không dùng chung giữa các máy.
+.codegraph/

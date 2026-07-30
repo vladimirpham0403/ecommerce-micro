@@ -1,0 +1,30 @@
+<Project>
+
+  <!--
+    Property dùng chung cho MỌI project trong repo (service, shared, test).
+    Property riêng của từng project (UserSecretsId, RootNamespace, IsPackable...) vẫn để trong .csproj.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!--
+      Không pin LangVersion: SDK .NET 10 đã mặc định C# 14 (extension members, collection
+      expression... mà repo đang dùng). Đặt "latest" chỉ thêm rủi ro nhảy version khi lên SDK mới.
+    -->
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Áp rule trong .editorconfig lúc build, không chỉ trong IDE. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!--
+      Bật khi muốn siết: mọi warning thành error.
+      Hiện để tắt vì repo còn warning MSB3277 (xung đột version EF Core) — sẽ hết sau khi CPM
+      pin transitive dependency. Bật lại sau khi build sạch warning.
+    -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>
