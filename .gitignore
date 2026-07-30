@@ -40,10 +40,3 @@ coverage*.xml
 
 *.log
 logs/
-
-.claude/
-.agents/
-CLAUDE.md
-skills-lock.json
-.codegraph/
-.scratch/
