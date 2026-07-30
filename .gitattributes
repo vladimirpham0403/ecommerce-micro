@@ -1,0 +1,54 @@
+# Mặc định: git tự nhận diện file text và chuẩn hoá về LF trong repo.
+# Working tree trên Windows vẫn là CRLF, nên không ảnh hưởng cách bạn edit.
+* text=auto
+
+#
+# Bắt buộc LF — các file này được thực thi bên trong container Linux.
+# Nếu bị checkout thành CRLF, bash sẽ báo lỗi kiểu "\r: command not found",
+# còn Dockerfile/entrypoint có thể vỡ theo cách rất khó lần ra.
+#
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+Dockerfile.*    text eol=lf
+.dockerignore   text eol=lf
+Makefile        text eol=lf
+*.mk            text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+.env.example    text eol=lf
+
+# Bắt buộc CRLF — công cụ Windows/Visual Studio.
+*.sln           text eol=crlf
+*.ps1           text eol=crlf
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+
+# .NET: bật diff nhận biết cú pháp C#, hiển thị tên method ở header hunk.
+*.cs            text diff=csharp
+*.csx           text diff=csharp
+*.csproj        text
+*.props         text
+*.targets       text
+
+# Markdown/JSON để text=auto xử lý, chỉ khai báo cho rõ ràng.
+*.md            text
+*.json          text
+
+# Binary — không diff, không đổi line ending.
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.pdf           binary
+*.zip           binary
+*.gz            binary
+*.dll           binary
+*.exe           binary
+*.pfx           binary
+*.snk           binary
+*.db            binary
+
+# File sinh tự động: gộp diff lại cho gọn khi review.
+*.Designer.cs           linguist-generated=true
+**/Migrations/*.cs      linguist-generated=true

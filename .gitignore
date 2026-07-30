@@ -45,6 +45,5 @@ logs/
 .agents/
 CLAUDE.md
 skills-lock.json
-
-# Cache cục bộ của tool index code, không dùng chung giữa các máy.
 .codegraph/
+.scratch/
