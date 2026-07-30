@@ -1,4 +1,4 @@
-# Kafka (KRaft) — ghi chú cho môi trường dev
+# Kafka (KRaft) - ghi chú cho môi trường dev
 
 ## Phân biệt listener
 - Service chạy TRONG Docker network -> `kafka:9092` (INTERNAL).

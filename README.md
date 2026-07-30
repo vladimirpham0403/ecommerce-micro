@@ -24,7 +24,7 @@ Sau khi `up`:
 - Product API: http://localhost:5033 — Swagger tại http://localhost:5033/swagger
 
 ## Cấu trúc
-- `contracts/` — chuẩn dùng chung (event, error, openapi).
-- `infra/` — docker-compose, kafka, monitoring.
-- `services/` — các microservice.
-- `scripts/` — tiện ích chạy local.
+- `contracts/` - chuẩn dùng chung (event, error, openapi).
+- `infra/` - docker-compose, kafka, monitoring.
+- `services/` - các microservice.
+- `scripts/` - tiện ích chạy local.

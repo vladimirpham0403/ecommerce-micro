@@ -1,8 +1,8 @@
 # Quy ước: Tiền tệ
 
-> Quyết định gốc: [ADR-0001](../../docs/adr/0001-tien-te-dung-decimal.md). File này là bản rút gọn để service tra cứu khi implement.
+> Source: [ADR-0001](../../docs/adr/0001-tien-te-dung-decimal.md). File này là bản rút gọn để service tra cứu khi triển khai.
 
-Áp dụng cho **mọi** service có xử lý tiền: Product, Cart, Order, Promotion, Payment, Worker.
+Áp dụng cho mọi service có xử lý tiền: Product, Cart, Order, Promotion, Payment, Worker.
 
 ## Quy tắc
 

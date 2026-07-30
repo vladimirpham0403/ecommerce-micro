@@ -6,11 +6,11 @@ Thư mục này định nghĩa các **quy chuẩn dùng chung giữa các servic
 
 ## Cấu trúc thư mục
 
-- `openapi/` — OpenAPI spec của từng service.
-- `events/` — Chuẩn event envelope và danh sách tên event.
-- `proto/` — gRPC proto cho sync call nội bộ (vd Cart → Product).
-- `errors/` — Danh sách error code và format response lỗi.
-- `conventions/` — Quy ước kiểu dữ liệu dùng chung (tiền tệ, thời gian...).
+- `openapi/` - OpenAPI spec của từng service.
+- `events/` - Chuẩn event envelope và danh sách tên event.
+- `proto/` - gRPC proto cho sync call nội bộ (vd Cart → Product).
+- `errors/` - Danh sách error code và format response lỗi.
+- `conventions/` - Quy ước kiểu dữ liệu dùng chung (tiền tệ, thời gian...).
 
 ## Nguyên tắc
 
