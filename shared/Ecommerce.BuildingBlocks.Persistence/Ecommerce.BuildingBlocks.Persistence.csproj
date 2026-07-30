@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- TargetFramework / ImplicitUsings / Nullable: xem Directory.Build.props ở repo root. -->
+  <!-- Version của package: xem Directory.Packages.props ở repo root. -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+
+</Project>

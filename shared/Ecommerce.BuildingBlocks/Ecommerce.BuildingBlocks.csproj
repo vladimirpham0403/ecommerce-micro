@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- TargetFramework / ImplicitUsings / Nullable: xem Directory.Build.props ở repo root. -->
+    <PropertyGroup>
+        <RootNamespace>Ecommerce.BuildingBlocks</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+</Project>
