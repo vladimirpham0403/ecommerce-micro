@@ -30,7 +30,7 @@ clean:
 	$(COMPOSE) down -v
 
 test:
-	@echo "Chưa có service nào"
+	dotnet test
 
 loadtest:
 	@echo "Chưa có k6 script"

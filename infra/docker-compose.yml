@@ -90,6 +90,32 @@ services:
     networks:
       - ecom-net
 
+  # Product service
+  product:
+    build:
+      context: ..
+      dockerfile: services/Product/Ecommerce.Product/Dockerfile
+    container_name: ecom-product
+    restart: unless-stopped
+    ports:
+      - "${PRODUCT_PORT}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${PRODUCT_ENVIRONMENT}
+      ASPNETCORE_HTTP_PORTS: 8080
+      # Host=postgres (tên service trong docker network), không phải localhost.
+      ConnectionStrings__ProductDb: "Host=postgres;Port=5432;Database=${PRODUCT_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - ecom-net
+
 volumes:
   pgdata:
   redisdata:
