@@ -35,6 +35,7 @@
 | PRODUCT_NOT_FOUND | 404 | Không thấy product |
 | PRODUCT_VARIANT_NOT_FOUND | 404 | Không thấy variant |
 | PRODUCT_INACTIVE | 409 | Product ngừng bán |
+| VALIDATION_ERROR | 400 | Request không hợp lệ — chi tiết từng field trong `details` |
 | SEARCH_QUERY_INVALID | 400 | Query search sai |
 | CART_EMPTY | 409 | Giỏ rỗng |
 | CART_ITEM_NOT_FOUND | 404 | Không thấy item trong giỏ |
