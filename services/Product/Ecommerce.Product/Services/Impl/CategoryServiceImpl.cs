@@ -31,7 +31,7 @@ public class CategoryServiceImpl(ProductDbContext db) : ICategoryService
 
         var category = new Category
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             Name = request.Name,
             Slug = Slug.GenerateSlug(request.Name),
             Description = request.Description,

@@ -30,7 +30,7 @@ public class BrandServiceImpl(ProductDbContext db) : IBrandService
         var brandSlug = Slug.GenerateSlug(request.Name);
         var brand = new Brand
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             Name = request.Name,
             Description = request.Description,
             Slug = brandSlug,
