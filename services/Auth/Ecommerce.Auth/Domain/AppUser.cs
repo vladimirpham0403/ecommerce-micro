@@ -8,7 +8,7 @@ public class AppUser : IAuditable
     public string Email { get; set; } = null!;
     public string NormalizedEmail { get; set; } = null!;
     public string PasswordHash { get; set; } = null!;
-    public string DisplayName { get; set; } = null!;
+    public string? DisplayName { get; set; } = null!;
     public bool IsActive { get; set; } = true;
     public bool EmailConfirmed { get; set; }
     public int AccessFailedCount { get; set; }

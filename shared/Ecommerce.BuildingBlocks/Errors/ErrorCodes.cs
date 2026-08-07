@@ -7,6 +7,9 @@ public static class ErrorCodes
     public const string AuthTokenExpired = "AUTH_TOKEN_EXPIRED";
     public const string AuthRefreshTokenInvalid = "AUTH_REFRESH_TOKEN_INVALID";
     public const string AuthForbidden = "AUTH_FORBIDDEN";
+    public const string AuthEmailAlreadyUsed = "AUTH_EMAIL_ALREADY_USED";
+    public const string AuthAccountLocked = "AUTH_ACCOUNT_LOCKED";
+    public const string AuthUnauthenticated = "AUTH_UNAUTHENTICATED";
 
     // Product
     public const string ProductNotFound = "PRODUCT_NOT_FOUND";
@@ -58,4 +61,5 @@ public static class ErrorCodes
     public const string SystemInternalError = "SYSTEM_INTERNAL_ERROR";
     public const string SystemTimeout = "SYSTEM_TIMEOUT";
     public const string SystemServiceUnavailable = "SYSTEM_SERVICE_UNAVAILABLE";
+    public const string SystemTooManyRequests = "SYSTEM_TOO_MANY_REQUESTS";
 }
