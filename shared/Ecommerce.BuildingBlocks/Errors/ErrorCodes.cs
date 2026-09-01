@@ -10,6 +10,10 @@ public static class ErrorCodes
     public const string AuthEmailAlreadyUsed = "AUTH_EMAIL_ALREADY_USED";
     public const string AuthAccountLocked = "AUTH_ACCOUNT_LOCKED";
     public const string AuthUnauthenticated = "AUTH_UNAUTHENTICATED";
+    public const string AuthUserNotFound = "AUTH_USER_NOT_FOUND";
+    public const string AuthRoleNotFound = "AUTH_ROLE_NOT_FOUND";
+    public const string AuthCannotDemoteSelf = "AUTH_CANNOT_DEMOTE_SELF";
+    public const string AuthSessionNotFound = "AUTH_SESSION_NOT_FOUND";
 
     // Product
     public const string ProductNotFound = "PRODUCT_NOT_FOUND";

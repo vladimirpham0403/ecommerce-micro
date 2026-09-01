@@ -1,0 +1,769 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Auth Service - kiến trúc tầng (OIDC / OAuth2 authorization server)",
+    "output": "auth-service-architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1340,
+      680
+    ],
+    "views": [
+      {
+        "id": "cookie-plane",
+        "label": "Cookie session",
+        "focus": [
+          "cl_browser",
+          "mw_authn",
+          "ep_razor",
+          "svc_user",
+          "svc_hash"
+        ],
+        "note": "Razor Pages xác thực bằng cookie ecom.auth, tách khỏi token session."
+      },
+      {
+        "id": "oidc-plane",
+        "label": "OIDC / token session",
+        "focus": [
+          "mw_authz",
+          "ep_oidc",
+          "ep_disc",
+          "db_oid",
+          "ext_product"
+        ],
+        "note": "OpenIddict phát token và công bố public key qua JWKS cho service khác."
+      },
+      {
+        "id": "bearer-plane",
+        "label": "REST API v1 - Bearer",
+        "focus": [
+          "cl_worker",
+          "mw_rate",
+          "ep_api",
+          "svc_user",
+          "db_app"
+        ],
+        "note": "REST v1 chỉ nhận Bearer JWT qua validation scheme của OpenIddict."
+      },
+      {
+        "id": "background-data",
+        "label": "Nền + dữ liệu",
+        "focus": [
+          "bg_prune",
+          "svc_pruner",
+          "db_ctx",
+          "db_app",
+          "db_oid"
+        ],
+        "note": "Dọn token định kỳ và lớp lưu trữ EF Core trên PostgreSQL."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "cl_browser",
+      "type": "frontend",
+      "label": "Browser / SPA",
+      "pos": [
+        28,
+        34
+      ],
+      "size": [
+        228,
+        40
+      ]
+    },
+    {
+      "id": "cl_swagger",
+      "type": "frontend",
+      "label": "Swagger UI",
+      "pos": [
+        276,
+        34
+      ],
+      "size": [
+        228,
+        40
+      ]
+    },
+    {
+      "id": "cl_postman",
+      "type": "external",
+      "label": "Postman",
+      "pos": [
+        524,
+        34
+      ],
+      "size": [
+        228,
+        40
+      ]
+    },
+    {
+      "id": "cl_worker",
+      "type": "external",
+      "label": "Service worker",
+      "sublabel": "máy-máy",
+      "pos": [
+        772,
+        34
+      ],
+      "size": [
+        228,
+        40
+      ]
+    },
+    {
+      "id": "mw_corr",
+      "type": "cloud",
+      "label": "CorrelationId",
+      "pos": [
+        28,
+        118
+      ],
+      "size": [
+        222,
+        42
+      ]
+    },
+    {
+      "id": "mw_exc",
+      "type": "cloud",
+      "label": "ExceptionHandling",
+      "pos": [
+        278,
+        118
+      ],
+      "size": [
+        222,
+        42
+      ]
+    },
+    {
+      "id": "mw_serilog",
+      "type": "cloud",
+      "label": "SerilogRequestLogging",
+      "pos": [
+        528,
+        118
+      ],
+      "size": [
+        222,
+        42
+      ]
+    },
+    {
+      "id": "mw_static",
+      "type": "cloud",
+      "label": "StaticFiles",
+      "pos": [
+        778,
+        118
+      ],
+      "size": [
+        222,
+        42
+      ]
+    },
+    {
+      "id": "mw_routing",
+      "type": "cloud",
+      "label": "Routing",
+      "pos": [
+        28,
+        200
+      ],
+      "size": [
+        222,
+        42
+      ]
+    },
+    {
+      "id": "mw_rate",
+      "type": "cloud",
+      "label": "RateLimiter",
+      "sublabel": "10 req/phút · theo IP",
+      "pos": [
+        278,
+        200
+      ],
+      "size": [
+        222,
+        42
+      ]
+    },
+    {
+      "id": "mw_authn",
+      "type": "security",
+      "label": "Authentication",
+      "pos": [
+        528,
+        200
+      ],
+      "size": [
+        222,
+        42
+      ]
+    },
+    {
+      "id": "mw_authz",
+      "type": "security",
+      "label": "Authorization",
+      "pos": [
+        778,
+        200
+      ],
+      "size": [
+        222,
+        42
+      ]
+    },
+    {
+      "id": "ep_razor",
+      "type": "frontend",
+      "label": "Razor Pages",
+      "sublabel": "Login · Logout · AccessDenied",
+      "tag": "cookie ecom.auth",
+      "pos": [
+        28,
+        294
+      ],
+      "size": [
+        220,
+        84
+      ]
+    },
+    {
+      "id": "ep_api",
+      "type": "backend",
+      "label": "REST API v1",
+      "sublabel": "register · me · users · roles · sessions",
+      "tag": "Bearer JWT",
+      "pos": [
+        288,
+        294
+      ],
+      "size": [
+        250,
+        84
+      ]
+    },
+    {
+      "id": "ep_oidc",
+      "type": "security",
+      "label": "OIDC endpoints",
+      "sublabel": "authorize · token · logout · userinfo",
+      "tag": "OpenIddict passthrough",
+      "pos": [
+        578,
+        294
+      ],
+      "size": [
+        240,
+        84
+      ]
+    },
+    {
+      "id": "ep_disc",
+      "type": "security",
+      "label": "JWKS",
+      "sublabel": "openid-config · jwks",
+      "tag": ".well-known",
+      "pos": [
+        856,
+        294
+      ],
+      "size": [
+        132,
+        84
+      ]
+    },
+    {
+      "id": "svc_hash",
+      "type": "backend",
+      "label": "IPasswordHasher",
+      "sublabel": "BcryptPasswordHasher",
+      "tag": "work factor 12",
+      "pos": [
+        28,
+        438
+      ],
+      "size": [
+        280,
+        76
+      ]
+    },
+    {
+      "id": "svc_user",
+      "type": "backend",
+      "label": "IUserService",
+      "sublabel": "UserServiceImpl",
+      "tag": "lockout 5 / 15 phút",
+      "pos": [
+        380,
+        438
+      ],
+      "size": [
+        300,
+        76
+      ]
+    },
+    {
+      "id": "svc_pruner",
+      "type": "backend",
+      "label": "ITokenPruner",
+      "sublabel": "TokenPruner",
+      "pos": [
+        720,
+        438
+      ],
+      "size": [
+        280,
+        76
+      ]
+    },
+    {
+      "id": "db_app",
+      "type": "database",
+      "label": "Bảng ứng dụng",
+      "sublabel": "users · roles · user_roles",
+      "pos": [
+        28,
+        574
+      ],
+      "size": [
+        280,
+        76
+      ]
+    },
+    {
+      "id": "db_ctx",
+      "type": "database",
+      "label": "AuthDbContext",
+      "sublabel": "EF Core trên PostgreSQL",
+      "tag": "snake_case",
+      "brand": "postgresql",
+      "pos": [
+        380,
+        574
+      ],
+      "size": [
+        300,
+        76
+      ]
+    },
+    {
+      "id": "db_oid",
+      "type": "database",
+      "label": "Bảng OpenIddict",
+      "sublabel": "applications · tokens · scopes",
+      "pos": [
+        720,
+        574
+      ],
+      "size": [
+        280,
+        76
+      ]
+    },
+    {
+      "id": "xc_serilog",
+      "type": "cloud",
+      "label": "Serilog",
+      "sublabel": "structured logging",
+      "pos": [
+        1040,
+        118
+      ],
+      "size": [
+        272,
+        44
+      ]
+    },
+    {
+      "id": "xc_health",
+      "type": "cloud",
+      "label": "HealthChecks",
+      "sublabel": "/health liveness · /ready",
+      "tag": "postgres + signing-cert",
+      "pos": [
+        1040,
+        174
+      ],
+      "size": [
+        272,
+        54
+      ]
+    },
+    {
+      "id": "xc_keys",
+      "type": "security",
+      "label": "DataProtection + RSA",
+      "sublabel": "key ring ra file · .pfx",
+      "pos": [
+        1040,
+        240
+      ],
+      "size": [
+        272,
+        54
+      ]
+    },
+    {
+      "id": "ext_product",
+      "type": "external",
+      "label": "Product API",
+      "sublabel": "verify Bearer JWT bằng public key",
+      "pos": [
+        1040,
+        330
+      ],
+      "size": [
+        272,
+        68
+      ]
+    },
+    {
+      "id": "bg_prune",
+      "type": "cloud",
+      "label": "TokenPruningService",
+      "sublabel": "PeriodicTimer 12 giờ · giữ 14 ngày",
+      "tag": "tự tạo DI scope",
+      "pos": [
+        1040,
+        438
+      ],
+      "size": [
+        272,
+        76
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "CLIENTS",
+      "wraps": [
+        "cl_browser",
+        "cl_swagger",
+        "cl_postman",
+        "cl_worker"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "region",
+      "label": "MIDDLEWARE PIPELINE",
+      "wraps": [
+        "mw_corr",
+        "mw_exc",
+        "mw_serilog",
+        "mw_static",
+        "mw_routing",
+        "mw_rate",
+        "mw_authn",
+        "mw_authz"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "security-group",
+      "label": "Cookie session",
+      "wraps": [
+        "ep_razor"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "security-group",
+      "label": "Bearer JWT",
+      "wraps": [
+        "ep_api"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "security-group",
+      "label": "OIDC - OpenIddict",
+      "wraps": [
+        "ep_oidc",
+        "ep_disc"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "region",
+      "label": "SERVICE LAYER",
+      "wraps": [
+        "svc_hash",
+        "svc_user",
+        "svc_pruner"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "region",
+      "label": "DATA - PostgreSQL",
+      "wraps": [
+        "db_app",
+        "db_ctx",
+        "db_oid"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "region",
+      "label": "CROSS-CUTTING",
+      "wraps": [
+        "xc_serilog",
+        "xc_health",
+        "xc_keys"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "region",
+      "label": "BÊN NGOÀI",
+      "wraps": [
+        "ext_product"
+      ],
+      "pad": 12
+    },
+    {
+      "kind": "region",
+      "label": "BACKGROUND",
+      "wraps": [
+        "bg_prune"
+      ],
+      "pad": 12
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-in",
+      "from": "cl_browser",
+      "to": "mw_corr",
+      "label": "HTTPS",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "swagger-in",
+      "from": "cl_swagger",
+      "to": "mw_corr",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "postman-in",
+      "from": "cl_postman",
+      "to": "mw_corr",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "worker-in",
+      "from": "cl_worker",
+      "to": "mw_corr",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "mw1",
+      "from": "mw_corr",
+      "to": "mw_exc",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "mw2",
+      "from": "mw_exc",
+      "to": "mw_serilog",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "mw3",
+      "from": "mw_serilog",
+      "to": "mw_static",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "mw4",
+      "from": "mw_static",
+      "to": "mw_routing",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "mw5",
+      "from": "mw_routing",
+      "to": "mw_rate",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "mw6",
+      "from": "mw_rate",
+      "to": "mw_authn",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "mw7",
+      "from": "mw_authn",
+      "to": "mw_authz",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "to-razor",
+      "from": "mw_authz",
+      "to": "ep_razor",
+      "label": "cookie ecom.auth",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "to-api",
+      "from": "mw_authz",
+      "to": "ep_api",
+      "label": "Bearer JWT",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "to-oidc",
+      "from": "mw_authz",
+      "to": "ep_oidc",
+      "label": "passthrough",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "razor-login",
+      "from": "ep_razor",
+      "to": "svc_user",
+      "label": "ValidateCredentialsAsync",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "api-users",
+      "from": "ep_api",
+      "to": "svc_user",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "oidc-user",
+      "from": "ep_oidc",
+      "to": "svc_user",
+      "label": "FindActiveByIdAsync",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "user-hash",
+      "from": "svc_user",
+      "to": "svc_hash",
+      "label": "bcrypt verify",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "prune-tick",
+      "from": "bg_prune",
+      "to": "svc_pruner",
+      "label": "mỗi 12 giờ",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelDy": 66
+    },
+    {
+      "id": "prune-db",
+      "from": "svc_pruner",
+      "to": "db_ctx",
+      "label": "xoá token quá 14 ngày",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "user-db",
+      "from": "svc_user",
+      "to": "db_ctx",
+      "label": "EF Core",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "ctx-app",
+      "from": "db_ctx",
+      "to": "db_app",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "ctx-oid",
+      "from": "db_ctx",
+      "to": "db_oid",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "jwks-fetch",
+      "from": "ext_product",
+      "to": "ep_disc",
+      "label": "GET JWKS",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Ba cơ chế xác thực",
+      "items": [
+        "Razor Pages: cookie ecom.auth, HttpOnly, SameSite=Lax, 1 giờ",
+        "OIDC: OpenIddict passthrough tới AuthorizationController",
+        "REST v1: Bearer JWT, OpenIddict validation scheme"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Ranh giới identity",
+      "items": [
+        "Cookie-session và token-session là hai hệ thống riêng",
+        "Chúng chỉ bắc cầu tại /connect/authorize",
+        "JWT ký RSA, verify qua JWKS, không chia sẻ secret"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Chính sách và nền",
+      "items": [
+        "RateLimiter fixed window 10 req/phút theo IP",
+        "users:manage = role Admin VÀ scope users.manage",
+        "bcrypt work factor 12, lockout 5 lần sai / 15 phút"
+      ]
+    }
+  ]
+}

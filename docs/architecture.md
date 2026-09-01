@@ -288,21 +288,43 @@ ecommerce-micro/
 **Mục tiêu:** tách Auth riêng thành **OIDC/OAuth2 provider chuẩn**; các service khác verify token qua JWKS. (eShop dùng Duende IdentityServer; ở đây dùng **OpenIddict** — OSS, miễn phí.)
 
 **Việc cần làm**
-- [ ] ASP.NET Core + EF Core + Npgsql + **OpenIddict** (server + validation).
-- [ ] Bảng: `users`, `roles`, `user_roles` + bảng OpenIddict (applications, authorizations, scopes, tokens).
-- [ ] Register + đăng nhập; cấp token theo **Authorization Code + PKCE** (web/mobile) và Client Credentials (service-to-service nếu cần).
-- [ ] Hash password bằng BCrypt hoặc Argon2 (vd `BCrypt.Net-Next` / `Konscious.Security.Cryptography`).
-- [ ] Access token (JWT, ký **RS256**) + refresh token + rotation; expose **`/.well-known/openid-configuration`** + **JWKS endpoint**.
-- [ ] Role/scope: `CUSTOMER`, `ADMIN`; định nghĩa scope cho từng API.
-- [ ] **Bảo mật:** rate-limit login, refresh token rotation, chống token reuse, revoke token.
-- [ ] Product service: verify token bằng JWKS (`AddJwtBearer` trỏ authority về Auth); `[Authorize]` cho route ghi, chỉ `ADMIN` được ghi product (policy-based authorization).
-- [ ] Health check, structured logging, Dockerfile.
+- [x] ASP.NET Core + EF Core + Npgsql + **OpenIddict 7.6** (server + validation).
+- [x] Bảng: `users`, `roles`, `user_roles` + bảng OpenIddict (applications, authorizations, scopes, tokens).
+- [x] Register + đăng nhập; cấp token theo **Authorization Code + PKCE** (luồng chuẩn), **Password grant** (đường tắt cho client first-party) và Client Credentials (service-to-service).
+- [x] Hash password bằng BCrypt (`BCrypt.Net-Next`, `EnhancedHashPassword` work factor 12).
+- [x] Access token (JWT, ký **RS256**) + refresh token + rotation; expose **`/.well-known/openid-configuration`** + **JWKS endpoint**.
+- [x] Role: `Customer`, `Admin`, `Manager`. Scope: `product.read`, `product.write`.
+- [x] **Bảo mật:** rate-limit login, refresh token rotation, chống token reuse, revoke token, lockout sau 5 lần sai.
+- [x] Product service: verify token bằng JWKS (`AddJwtBearer` trỏ authority về Auth); `[Authorize]` cho route ghi, chỉ `Admin` **và** có scope `product.write` mới ghi được (policy-based authorization).
+- [x] Health check, structured logging, Dockerfile. `/ready` cảnh báo trước khi chứng thư ký hết hạn (Degraded 30 ngày, Unhealthy khi đã hết).
+- [x] Dọn token/authorization đã chết theo lịch (`TokenPruningService`) - không có nó thì hai bảng của OpenIddict chỉ lớn lên.
+- [x] API quản trị người dùng: `GET /v1/auth/users`, `PUT /v1/auth/users/{id}/roles` (cần role `Admin` **và** scope `users.manage`).
+- [x] Quản lý phiên đăng nhập: `GET/DELETE /v1/auth/sessions` - xem đang đăng nhập ở đâu, đăng xuất một thiết bị hoặc mọi nơi.
+- [x] Đọc `X-Forwarded-For` được (mặc định tắt) để rate-limit còn phân vùng đúng khi Gateway đứng trước.
 
 **JWT claim tối thiểu:** `sub`, `email`, `roles`/`scope`, `jti`.
 
 **Mấu chốt:** service khác **không cần biết secret** — chỉ verify chữ ký bằng public key lấy từ JWKS của Auth (RS256). Đây là điểm khác cốt lõi so với tự ký HS256 chia sẻ secret.
 
-**Tiêu chí hoàn thành:** đăng nhập theo Authorization Code + PKCE → nhận access + refresh; dùng token tạo product; không token/không đủ scope/không phải ADMIN → 401/403; refresh + revoke hoạt động; service verify qua JWKS không cần secret chung.
+**Tiêu chí hoàn thành:** đăng nhập → nhận access + refresh; dùng token tạo product; không token/không đủ scope/không phải Admin → 401/403; refresh + revoke hoạt động; service verify qua JWKS không cần secret chung.
+
+**Đã đạt.** 69 test xanh (Auth 48, Product 21); `ecom-auth` + `ecom-product` chạy Docker healthy; JWKS chỉ phát public key (`use:sig`, không có `d`/`p`/`q`, không có khóa mã hóa); `kid` giữ nguyên qua `up --build --force-recreate`; `POST /v1/products` với token thiếu role trả **403** (chứng tỏ chữ ký đã verify qua JWKS) còn không token trả 401; biến môi trường của Product chỉ có `Auth__Authority`, không giữ khóa nào.
+
+**Ba điều chỉnh so với bản mô tả ban đầu:**
+
+1. **Bật thêm Password grant bên cạnh Authorization Code + PKCE.** Auth Code là luồng chuẩn và được giữ nguyên - nó là thứ duy nhất còn đường cho 2FA, đăng nhập bằng Google/Facebook và SSO về sau. Password grant thêm vào làm đường tắt một-request cho Postman/Swagger và script nội bộ. Lưu ý: ROPC đã bị OAuth 2.1 loại bỏ vì client phải cầm mật khẩu thật, nên chỉ cấp cho client first-party; siết lại ở production bằng cách bỏ `Permissions.GrantTypes.Password` khỏi client trong `AuthSeeder`, không phải sửa code.
+2. **Tên role viết PascalCase** (`Admin`, `Customer`, `Manager`) chứ không phải `ADMIN`/`CUSTOMER`. Đây là hợp đồng đi qua JWT chứ không qua project reference - đổi một bên mà quên bên kia thì build vẫn xanh, chỉ runtime mới 403. Giá trị dùng chung nằm ở `Ecommerce.Auth.Domain.Contracts.RoleNames` và `Ecommerce.Product.Common.ProductPolicies`.
+3. **Ghi product cần đủ cả hai:** role `Admin` **và** scope `product.write`. Role trả lời "ai", scope trả lời "token này được phép làm gì" - một admin đăng nhập bằng app chỉ xin `product.read` thì vẫn không ghi được.
+
+**Năm hạng mục bổ sung sau khi rà soát lại phạm vi phase:**
+
+1. **Dọn token định kỳ.** OpenIddict chỉ ghi vào `OpenIddictTokens`/`OpenIddictAuthorizations` chứ không bao giờ tự xóa - mỗi lần refresh rotation chỉ *đánh dấu* dòng cũ là redeemed. Không dọn thì hai bảng lớn vô hạn, và triệu chứng chỉ lộ ra sau vài tháng chạy thật.
+2. **Quản trị người dùng.** Trước đó cách duy nhất tạo một quản trị viên trên môi trường thật là vào psql sửa `user_roles` bằng tay, vì `/v1/auth/register` gán cứng role `Customer`. Có chặn tự gỡ role `Admin` của chính mình - không chặn thì một người bấm nhầm là hệ thống hết đường quản trị.
+3. **Quản lý phiên.** Trước đó authorization là ad-hoc dùng một lần nên không trả lời được "tôi đang đăng nhập ở đâu" và "đăng xuất khỏi mọi nơi". Giờ mỗi cặp (người dùng, client, bộ scope) dùng chung một authorization lâu dài, thu hồi nó là cắt cả chuỗi refresh token.
+4. **Forwarded headers.** Rate-limit phân vùng theo IP; sau Gateway ở Phase 1.5 thì mọi request mang IP của proxy và toàn bộ người dùng dùng chung một hạn mức. Mặc định tắt, bật mà không khai dải mạng proxy thì host không khởi động - tin header này khi không có proxy thật là cho client tự khai IP.
+5. **Bỏ cột `email_confirmed`.** Không chỗ nào ghi, không chỗ nào đọc, nhưng đọc code lại tưởng có một lớp bảo vệ. Xác thực email thuộc phase sau; tới lúc đó thêm lại cột kèm luồng thật.
+
+Kèm hai sửa lỗi nhỏ: `ValidateCredentialsAsync` verify mật khẩu trước mọi nhánh từ chối khác (đặt sau thì đo thời gian phản hồi là phân biệt được "bị khóa" với "sai mật khẩu"), và Swagger khai hai security requirement riêng biệt thay vì gộp một (gộp lại thành VÀ, đòi lấy token bằng cả hai luồng).
 
 ---
 
@@ -310,6 +332,8 @@ ecommerce-micro/
 **3–7 ngày**
 
 **Mục tiêu:** có một cửa vào duy nhất sớm.
+
+> **Lưu ý cho phase này và các phase sau:** dự án là **backend-only**. Không viết frontend, không thêm trang HTML/Razor vào bất kỳ service nào. Test API bằng Postman, Swagger UI và file `.http` của từng service.
 
 **Việc cần làm**
 - [ ] Cấu hình **YARP** reverse proxy: `/auth/**` → Auth, `/products/**` → Product.

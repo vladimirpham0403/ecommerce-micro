@@ -1,6 +1,257 @@
-@Ecommerce.Auth_HostAddress = http://localhost:5059
+### Auth service - test bằng REST client hoặc Postman.
+###
+### File này dùng PASSWORD GRANT vì nó gói trọn trong một request, không cần trình duyệt.
+### Luồng chuẩn cho app thật là Authorization Code + PKCE - cũng đã bật, nhưng nó cần bước
+### đăng nhập trên trình duyệt nên không viết được thành file .http. Test luồng đó bằng:
+###   - Swagger UI: http://auth:5044/swagger -> nút Authorize -> oauth2-authorization-code
+###   - Postman: tab Authorization -> OAuth 2.0 -> Authorization Code (With PKCE)
+###       Auth URL:  http://auth:5044/connect/authorize
+###       Token URL: http://auth:5044/connect/token
+###       Client ID: web-client
+###       Callback:  https://oauth.pstmn.io/v1/callback
+###
+### Chạy tuần tự từ trên xuống. Biến @accessToken / @refreshToken được gán tự động
+### từ response của request "Đăng nhập", nhờ cú pháp {{tenRequest.response.body.$.field}}.
 
-GET {{Ecommerce.Auth_HostAddress}}/weatherforecast/
-Accept: application/json
+@host = http://auth:5044
+@productHost = http://localhost:5033
+@clientId = web-client
+@serviceSecret = service_worker_dev_secret
+
+@email = admin@ecom.local
+@password = Admin@123456
+
+###############################################################################
+# 1. Metadata công khai - không cần token
+###############################################################################
+
+### Discovery: liệt kê endpoint và grant được hỗ trợ
+GET {{host}}/.well-known/openid-configuration
+
+### JWKS: public key để service khác verify chữ ký.
+### Chỉ được thấy "n" và "e". Nếu thấy "d"/"p"/"q" là private key đã lộ.
+GET {{host}}/.well-known/jwks
+
+### Liveness / readiness
+GET {{host}}/health
 
 ###
+GET {{host}}/ready
+
+###############################################################################
+# 2. Đăng ký tài khoản
+###############################################################################
+
+### Tạo user mới (mặc định role Customer)
+POST {{host}}/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "nguoidung@ecom.test",
+  "password": "Passw0rd!",
+  "displayName": "Người dùng mới"
+}
+
+###############################################################################
+# 3. Lấy token bằng password grant
+###############################################################################
+
+# @name login
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id={{clientId}}&username={{email}}&password={{password}}&scope=openid email profile roles offline_access product.read product.write
+
+@accessToken = {{login.response.body.$.access_token}}
+@refreshToken = {{login.response.body.$.refresh_token}}
+
+### Sai mật khẩu -> invalid_grant. Email không tồn tại cũng trả đúng thông điệp này,
+### để không tiết lộ email nào có trong hệ thống.
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id={{clientId}}&username={{email}}&password=SaiMatKhau!&scope=openid
+
+### Không xin offline_access -> không được cấp refresh token
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id={{clientId}}&username={{email}}&password={{password}}&scope=openid product.read
+
+###############################################################################
+# 4. Dùng token
+###############################################################################
+
+### Thông tin từ token đang gửi (envelope ApiResponse)
+GET {{host}}/v1/auth/me
+Authorization: Bearer {{accessToken}}
+
+### Chuẩn OIDC userinfo (JSON trần, không bọc ApiResponse)
+GET {{host}}/connect/userinfo
+Authorization: Bearer {{accessToken}}
+
+### Không token -> 401
+GET {{host}}/v1/auth/me
+
+###############################################################################
+# 5. Refresh và revoke
+###############################################################################
+
+# @name refresh
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&client_id={{clientId}}&refresh_token={{refreshToken}}
+
+@rotatedRefreshToken = {{refresh.response.body.$.refresh_token}}
+
+### Gửi lại refresh token CŨ -> invalid_grant.
+### Đây là phát hiện tái sử dụng: OpenIddict thu hồi cả chuỗi token con cháu.
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&client_id={{clientId}}&refresh_token={{refreshToken}}
+
+### Thu hồi refresh token hiện tại
+POST {{host}}/connect/revoke
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{clientId}}&token={{rotatedRefreshToken}}&token_type_hint=refresh_token
+
+### Sau khi revoke, refresh sẽ thất bại
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&client_id={{clientId}}&refresh_token={{rotatedRefreshToken}}
+
+###############################################################################
+# 6. Client credentials (service-to-service, không có user)
+###############################################################################
+
+# @name serviceToken
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=service-worker&client_secret={{serviceSecret}}&scope=product.read
+
+@serviceAccessToken = {{serviceToken.response.body.$.access_token}}
+
+### Sai secret -> invalid_client
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=service-worker&client_secret=wrong-secret&scope=product.read
+
+### service-worker chỉ được cấp product.read -> xin product.write bị từ chối
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&client_id=service-worker&client_secret={{serviceSecret}}&scope=product.write
+
+###############################################################################
+# 7. Ma trận phân quyền trên Product service
+#    Product verify token bằng JWKS của Auth - không giữ secret nào.
+###############################################################################
+
+### Đọc catalog: công khai, 200
+GET {{productHost}}/v1/products
+
+### Ghi không token -> 401 AUTH_UNAUTHENTICATED
+POST {{productHost}}/v1/products
+Content-Type: application/json
+
+{}
+
+### Ghi bằng token service-worker (không có role Admin) -> 403 AUTH_FORBIDDEN.
+### 403 chứ không phải 401 nghĩa là chữ ký đã verify thành công qua JWKS.
+POST {{productHost}}/v1/products
+Content-Type: application/json
+Authorization: Bearer {{serviceAccessToken}}
+
+{}
+
+### Ghi bằng token admin (đủ role Admin + scope product.write) -> 201
+POST {{productHost}}/v1/brands
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Thương hiệu thử",
+  "logoUrl": null,
+  "description": "Tạo bằng token từ Auth service"
+}
+
+###############################################################################
+# 8. Quản trị người dùng - cần role Admin VÀ scope users.manage
+#    Lưu ý: @accessToken ở mục 3 KHÔNG xin users.manage nên sẽ bị 403.
+#    Dùng @adminToken bên dưới.
+###############################################################################
+
+# @name adminLogin
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id={{clientId}}&username={{email}}&password={{password}}&scope=openid email profile roles offline_access product.read product.write users.manage
+
+@adminToken = {{adminLogin.response.body.$.access_token}}
+
+### Danh sách người dùng, lọc theo email hoặc tên hiển thị
+GET {{host}}/v1/auth/users?search=ecom.local&page=1&pageSize=20
+Authorization: Bearer {{adminToken}}
+
+### Token thiếu scope users.manage -> 403 AUTH_FORBIDDEN.
+### Đúng người, sai quyền của token: role không thay cho scope được.
+GET {{host}}/v1/auth/users
+Authorization: Bearer {{accessToken}}
+
+### Gán lại TOÀN BỘ role của một người dùng (thay thế, không cộng dồn).
+### Thay {userId} bằng id lấy từ request bên trên.
+PUT {{host}}/v1/auth/users/00000000-0000-0000-0000-000000000000/roles
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "roles": ["Admin", "Customer"]
+}
+
+### Role không tồn tại -> 400 AUTH_ROLE_NOT_FOUND
+PUT {{host}}/v1/auth/users/00000000-0000-0000-0000-000000000000/roles
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "roles": ["Superuser"]
+}
+
+###############################################################################
+# 9. Phiên đăng nhập của chính mình - không cần scope riêng
+###############################################################################
+
+### Đang đăng nhập ở đâu. Phiên của chính token đang gửi có isCurrent = true.
+GET {{host}}/v1/auth/sessions
+Authorization: Bearer {{accessToken}}
+
+### Đăng xuất một thiết bị. Thay {sessionId} bằng id lấy từ request bên trên.
+DELETE {{host}}/v1/auth/sessions/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{accessToken}}
+
+### Phiên của người khác -> 404 AUTH_SESSION_NOT_FOUND (không phải 403:
+### 403 đã là xác nhận "id này có thật", đủ để dò xem phiên nào đang tồn tại).
+
+### Đăng xuất khỏi mọi nơi - dùng khi nghi ngờ mật khẩu bị lộ
+DELETE {{host}}/v1/auth/sessions
+Authorization: Bearer {{accessToken}}
+
+### Sau khi thu hồi, refresh token chết ngay -> invalid_grant.
+### Access token thì vẫn dùng được tới lúc hết hạn, tối đa 15 phút.
+POST {{host}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&client_id={{clientId}}&refresh_token={{refreshToken}}
+
+###############################################################################
+# 10. Readiness - gồm cả cảnh báo hạn chứng thư ký
+#     Degraded khi cert còn dưới Auth:Certificates:ExpiryWarningDays ngày.
+###############################################################################
+
+GET {{host}}/ready

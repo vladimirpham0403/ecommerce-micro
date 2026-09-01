@@ -1,32 +1,35 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+    <!-- TargetFramework / ImplicitUsings / Nullable: xem Directory.Build.props ở repo root. -->
+    <!-- Version của package: xem Directory.Packages.props ở repo root. -->
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <UserSecretsId>5c1f0d2e-7b4a-46c8-9e13-2a7d5f8c04b1</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Asp.Versioning.Mvc" />
-      <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
-      <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
-      <PackageReference Include="BCrypt.Net-Next" />
-      <PackageReference Include="EFCore.NamingConventions" />
-      <PackageReference Include="FluentValidation.AspNetCore" />
-      <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        <PrivateAssets>all</PrivateAssets>
-      </PackageReference>
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
-      <PackageReference Include="Serilog.AspNetCore" />
-      <PackageReference Include="Serilog.Sinks.Console" />
-      <PackageReference Include="Swashbuckle.AspNetCore" />
+        <PackageReference Include="Asp.Versioning.Mvc" />
+        <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+        <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
+        <PackageReference Include="BCrypt.Net-Next" />
+        <PackageReference Include="EFCore.NamingConventions" />
+        <PackageReference Include="FluentValidation.AspNetCore" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+        <PackageReference Include="OpenIddict.AspNetCore" />
+        <PackageReference Include="OpenIddict.EntityFrameworkCore" />
+        <PackageReference Include="Serilog.AspNetCore" />
+        <PackageReference Include="Serilog.Sinks.Console" />
+        <PackageReference Include="Swashbuckle.AspNetCore" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\shared\Ecommerce.BuildingBlocks.Persistence\Ecommerce.BuildingBlocks.Persistence.csproj" />
-      <ProjectReference Include="..\..\..\shared\Ecommerce.BuildingBlocks\Ecommerce.BuildingBlocks.csproj" />
+        <ProjectReference Include="..\..\..\shared\Ecommerce.BuildingBlocks\Ecommerce.BuildingBlocks.csproj" />
+        <ProjectReference Include="..\..\..\shared\Ecommerce.BuildingBlocks.Persistence\Ecommerce.BuildingBlocks.Persistence.csproj" />
     </ItemGroup>
 
 </Project>

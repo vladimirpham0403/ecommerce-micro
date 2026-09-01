@@ -1,0 +1,24 @@
+@page
+@model Ecommerce.Auth.Pages.IndexModel
+@{
+    ViewData["Title"] = "Ecommerce Auth";
+}
+
+<h1>Ecommerce Auth</h1>
+
+@if (Model.DisplayName is not null)
+{
+    <p>Đang đăng nhập với tên <strong>@Model.DisplayName</strong>.</p>
+    <form method="post" asp-page="/Account/Logout">
+        <button type="submit">Đăng xuất</button>
+    </form>
+}
+else
+{
+    <p class="hint">Chưa đăng nhập.</p>
+    <a href="/Account/Login">Tới trang đăng nhập</a>
+}
+
+<p class="hint">
+    Discovery: <a href="/.well-known/openid-configuration">/.well-known/openid-configuration</a>
+</p>
