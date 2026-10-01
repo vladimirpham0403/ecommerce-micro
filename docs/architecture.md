@@ -1,7 +1,7 @@
 # E-commerce Microservices
 
 > Toàn bộ hệ thống dùng một ngôn ngữ duy nhất: C# / .NET 10 (LTS).
-> Mục tiêu vẫn là học microservices đúng bản chất — nhưng tập trung vào kiến trúc, pattern và hệ sinh thái .NET.
+> Mục tiêu là học microservices đúng bản chất — nhưng tập trung vào kiến trúc, pattern và hệ sinh thái .NET.
 
 ---
 
@@ -9,15 +9,15 @@
 
 1. [Danh sách service](#1-danh-sách-service)
 2. [Tech stack](#2-tech-stack)
-3. [Sơ đồ kiến trúc đầy đủ](#3-sơ-đồ-kiến-trúc-đầy-đủ)
-4. [Cấu trúc thư mục đích](#4-cấu-trúc-thư-mục-đích)
-5. [Nguyên tắc vàng](#5-nguyên-tắc-vàng)
+3. [Sơ đồ kiến trúc](#3-sơ-đồ-kiến-trúc)
+4. [Cấu trúc thư mục](#4-cấu-trúc-thư-mục)
+5. [Nguyên tắc](#5-nguyên-tắc)
 6. [Roadmap chi tiết (Phase -1 → 13)](#6-roadmap-chi-tiết)
-7. [Event contract](#7-event-contract-chuẩn)
+7. [Event contract](#7-event-contract)
 8. [Database per service](#8-database-per-service)
 9. [API response & error code](#9-api-response--error-code)
 10. [Definition of Done](#10-definition-of-done)
-11. [Thứ tự & lộ trình thời gian](#11-thứ-tự--lộ-trình-thời-gian)
+11. [Thứ tự & thời gian](#11-thứ-tự--thời-gian)
 
 ---
 
@@ -41,7 +41,7 @@ Tất cả service viết bằng **.NET 10**. Mỗi service một trách nhiệm
 | 12 | Media | ASP.NET Core Web API | Upload & quản lý ảnh sản phẩm | MinIO/S3 |
 | 13 | Worker | **.NET Worker Service** | Outbox publisher tập trung, cron, cleanup, saga timeout | (kết nối nhiều DB) |
 
-> 13 service. Không làm hết một lúc — xem [thứ tự ở mục 11](#11-thứ-tự--lộ-trình-thời-gian).
+> 13 service. Không làm hết một lúc — xem [thứ tự ở mục 11](#11-thứ-tự--thời-gian).
 
 **Vì sao chỉ dùng .NET?** Một stack duy nhất giúp: tái sử dụng tối đa thư viện chung (logging, contracts, messaging, outbox/inbox), một bộ CI/CD đồng nhất, dễ refactor xuyên service, và đi sâu vào hệ sinh thái .NET (EF Core, YARP, SignalR, MassTransit/Confluent.Kafka, OpenTelemetry) thay vì học hời hợt 4 ngôn ngữ.
 
@@ -93,7 +93,7 @@ Tất cả service viết bằng **.NET 10**. Mỗi service một trách nhiệm
 
 ---
 
-## 3. SƠ ĐỒ KIẾN TRÚC ĐẦY ĐỦ
+## 3. SƠ ĐỒ KIẾN TRÚC
 
 ```
                               Client (Web / Mobile)
@@ -139,9 +139,9 @@ Tất cả service viết bằng **.NET 10**. Mỗi service một trách nhiệm
 
 ---
 
-## 4. CẤU TRÚC THƯ MỤC ĐÍCH
+## 4. CẤU TRÚC THƯ MỤC
 
-> Đích đến cuối cùng. Không tạo hết một lúc — mỗi phase thêm dần.
+> Đích đến cuối cùng. Không tạo hết một lúc - mỗi phase thêm dần.
 
 ```
 ecommerce-micro/
@@ -223,9 +223,9 @@ ecommerce-micro/
 
 ---
 
-## 5. NGUYÊN TẮC VÀNG
+## 5. NGUYÊN TẮC
 
-1. **Không gộp service, không cắt.** Mỗi service một trách nhiệm. Học từ từ nhưng làm đầy đủ.
+1. **Không gộp service, không cắt.** Mỗi service một vai trò riêng. Học từ từ nhưng làm đầy đủ.
 2. **Database per Service tuyệt đối.** Service A không bao giờ chạm DB của service B. Cần dữ liệu → gọi API hoặc nghe event.
 3. **Product không giữ tồn kho thật.** Product chỉ giữ thông tin hiển thị. Tồn kho thật ở Inventory.
 4. **Mỗi service stateless** (state đẩy ra Redis/DB) để scale ngang được.
@@ -449,9 +449,9 @@ ecommerce-micro/
 **Inventory bổ sung**
 - [ ] Consume `PaymentFailed` → release stock → publish `StockReleased`.
 
-**⭐ Bổ khuyết quan trọng (đừng bỏ):**
+**⭐ Bổ khuyết quan trọng:**
 - [ ] **Saga timeout / orphan handling:** mỗi bước saga có deadline. Nếu Payment không bao giờ callback → order treo. Cần cron (ở Worker, Phase 12) quét order quá hạn → cancel + release stock.
-- [ ] **Reservation expiry:** stock đã reserve mà không thanh toán trong X phút → tự release. Không có cái này thì kho bị "giam" vĩnh viễn.
+- [ ] **Reservation expiry:** stock đã reserve mà không thanh toán trong X phút → tự release. Không có cái này thì kho bị treo vĩnh viễn.
 
 **Saga flows**
 ```
@@ -526,7 +526,7 @@ Timeout:     OrderCreated → StockReserved → (payment im lặng) → [timeout
 ### PHASE 11 — Load Test & Performance
 **2–3 tuần · Tool:** k6
 
-**Mục tiêu:** đo thật, không đoán. Hiện thực hóa mục tiêu 10k.
+**Mục tiêu:** Test thật, không đưa ra phỏng đoán. Hiện thực hóa mục tiêu 10k.
 
 **SLO mục tiêu (định nghĩa rõ con số):**
 ```
@@ -603,7 +603,7 @@ Các phase này không bắt buộc cho luồng mua hàng, nhưng bám sát nh�
 
 ---
 
-## 7. EVENT CONTRACT CHUẨN
+## 7. EVENT CONTRACT
 
 **Event envelope** (mọi event tuân theo):
 ```json
@@ -698,7 +698,7 @@ Một phase chỉ "xong" khi:
 
 ---
 
-## 11. THỨ TỰ & LỘ TRÌNH THỜI GIAN
+## 11. THỨ TỰ & THỜI GIAN
 
 ```
 Phase -1  Foundation
@@ -719,7 +719,7 @@ Phase 12  Worker tách riêng  (.NET Worker Service)
 Phase 13  Kubernetes + CI/CD + Broker nâng cao
 ```
 
-**Core tối thiểu để có một ecommerce đúng bản chất:** `-1 → 0 → 1 → 1.5 → 3 → 5 → 7`. Làm xong là đã có luồng mua hàng đầu-cuối chạy được. Các phase còn lại bồi đắp cho đầy đủ.
+**Core tối thiểu để có một ecommerce đúng bản chất:** `-1 → 0 → 1 → 1.5 → 3 → 5 → 7`. Làm xong là đã có luồng mua hàng chạy được. Các phase còn lại bồi đắp cho đầy đủ.
 
 | Giai đoạn | Phase | Thời lượng |
 |---|---:|---:|
@@ -766,10 +766,10 @@ Tham chiếu `dotnet/eShop` (bản .NET Aspire, broker RabbitMQ/Azure Service Bu
 
 ---
 
-## GHI CHÚ CUỐI
+## GHI CHÚ
 
 - **Một stack duy nhất — .NET 10:** Gateway (YARP), Notification (SignalR), Worker (Worker Service), còn lại là ASP.NET Core Web API. Lợi thế: tái dùng `shared/` tối đa, một CI/CD, một bộ tooling, refactor xuyên service dễ.
-- **Đừng để one-stack làm mờ ranh giới service:** vẫn Database per Service, vẫn giao tiếp qua API/event, `shared/` chỉ chứa building block kỹ thuật — không chứa domain.
-- **Các điểm "đặc sản" .NET nên học sâu:** DDD + CQRS (MediatR), OpenIddict (OIDC/OAuth2), EF Core (migration, atomic update, compiled query), gRPC nội bộ, YARP, SignalR + Redis backplane, MassTransit vs Confluent.Kafka, resilience handler/Polly, OpenTelemetry .NET, Worker Service / BackgroundService, .NET Aspire + ServiceDefaults.
-- **Hai bổ khuyết logic quan trọng nhất** vẫn nằm ở **Phase 7**: saga timeout và reservation expiry — đừng bỏ, đó là thứ làm saga "thật".
-- Mỗi pattern (Outbox, Inbox, Saga, CQRS read-model, cache invalidation) sau khi làm xong nên **tự viết lại bằng lời của mình** để học sâu.
+- **Không để one-stack làm mờ ranh giới service:** vẫn Database per Service, vẫn giao tiếp qua API/event, `shared/` chỉ chứa building block kỹ thuật — không chứa domain.
+- **Các điểm đặc trưng .NET nên học kỹ:** DDD + CQRS (MediatR), OpenIddict (OIDC/OAuth2), EF Core (migration, atomic update, compiled query), gRPC nội bộ, YARP, SignalR + Redis backplane, MassTransit vs Confluent.Kafka, resilience handler/Polly, OpenTelemetry .NET, Worker Service / BackgroundService, .NET Aspire + ServiceDefaults.
+- **Hai bổ khuyết logic quan trọng** vẫn nằm ở **Phase 7**: saga timeout và reservation expiry.
+- Mỗi pattern (Outbox, Inbox, Saga, CQRS read-model, cache invalidation) sau khi làm xong nên **tự note lại những kiến thức**.
