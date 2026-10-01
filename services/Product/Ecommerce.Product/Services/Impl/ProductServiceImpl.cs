@@ -66,7 +66,7 @@ public class ProductServiceImpl(ProductDbContext db) : IProductService
 
         var product = new Domain.Product
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.CreateVersion7(),
             Sku = request.Sku,
             Name = request.Name,
             Slug = slug,
@@ -85,7 +85,7 @@ public class ProductServiceImpl(ProductDbContext db) : IProductService
             {
                 product.Variants.Add(new ProductVariant
                 {
-                    Id = Guid.NewGuid(),
+                    Id = Guid.CreateVersion7(),
                     Sku = v.Sku,
                     Name = v.Name,
                     Price = v.Price,
@@ -101,7 +101,7 @@ public class ProductServiceImpl(ProductDbContext db) : IProductService
             {
                 product.Images.Add(new ProductImage
                 {
-                    Id = Guid.NewGuid(),
+                    Id = Guid.CreateVersion7(),
                     Url = i.Url,
                     AltText = i.AltText,
                     SortOrder = i.SortOrder,
@@ -142,7 +142,7 @@ public class ProductServiceImpl(ProductDbContext db) : IProductService
     {
         var product = await db.Products.FirstOrDefaultAsync(p => p.Id == id, ct)
                       ?? throw AppException.NotFound(ErrorCodes.ProductNotFound, $"Product with id: {id} not found!");
-        
+
         db.Products.Remove(product);
         await db.SaveChangesAsync(ct);
     }

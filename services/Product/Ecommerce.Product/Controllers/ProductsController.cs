@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Ecommerce.BuildingBlocks.Http;
+using Ecommerce.Product.Common;
 using Ecommerce.Product.Dtos;
 using Ecommerce.Product.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ecommerce.Product.Controllers;
@@ -30,6 +32,7 @@ public class ProductsController(IProductService service) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = ProductPolicies.Write)]
     public async Task<IActionResult> Create(CreateProductRequest request, CancellationToken ct)
     {
         var result = await service.CreateAsync(request, ct);
@@ -37,6 +40,7 @@ public class ProductsController(IProductService service) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = ProductPolicies.Write)]
     public async Task<IActionResult> Update(Guid id, UpdateProductRequest request, CancellationToken ct)
     {
         var result = await service.UpdateAsync(id, request, ct);
@@ -44,6 +48,7 @@ public class ProductsController(IProductService service) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = ProductPolicies.Write)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await service.DeleteAsync(id, ct);

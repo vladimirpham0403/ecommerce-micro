@@ -11,6 +11,8 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql
+      # Chỉ chạy khi volume còn trống - tạo sẵn product_db và auth_db.
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -90,6 +92,42 @@ services:
     networks:
       - ecom-net
 
+  # Auth service (OIDC provider)
+  auth:
+    build:
+      context: ..
+      dockerfile: services/Auth/Ecommerce.Auth/Dockerfile
+    container_name: ecom-auth
+    restart: unless-stopped
+    ports:
+      # Publish đúng port mà issuer công bố, để URL trong và ngoài Docker trùng nhau.
+      - "${AUTH_PORT}:5044"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${AUTH_ENVIRONMENT}
+      ASPNETCORE_HTTP_PORTS: 5044
+      ConnectionStrings__AuthDb: "Host=postgres;Port=5432;Database=${AUTH_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Auth__Issuer: ${AUTH_ISSUER}
+      Auth__ServiceWorker__Secret: ${AUTH_SERVICE_WORKER_SECRET}
+      Auth__Certificates__Path: /run/secrets/auth-certs
+      Auth__Certificates__Password: ${AUTH_CERT_PASSWORD}
+      Auth__DataProtection__Path: /keys
+    volumes:
+      # read-only: container không có lý do gì để ghi vào đây.
+      - ./certs:/run/secrets/auth-certs:ro
+      # Key ring mã hóa cookie login - phải sống lâu hơn container.
+      - authkeys:/keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5044/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - ecom-net
+
   # Product service
   product:
     build:
@@ -104,8 +142,13 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       # Host=postgres (tên service trong docker network), không phải localhost.
       ConnectionStrings__ProductDb: "Host=postgres;Port=5432;Database=${PRODUCT_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      # Chỉ một URL - Product không giữ secret nào để verify token.
+      Auth__Authority: ${AUTH_ISSUER}
+      Auth__RequireHttpsMetadata: "false"
     depends_on:
       postgres:
+        condition: service_healthy
+      auth:
         condition: service_healthy
     healthcheck:
       test: [ "CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1" ]
@@ -120,6 +163,7 @@ volumes:
   pgdata:
   redisdata:
   kafkadata:
+  authkeys:
 
 networks:
   ecom-net:

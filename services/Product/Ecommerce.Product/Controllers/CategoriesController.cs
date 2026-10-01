@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Ecommerce.BuildingBlocks.Http;
+using Ecommerce.Product.Common;
 using Ecommerce.Product.Dtos;
 using Ecommerce.Product.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ecommerce.Product.Controllers;
@@ -28,6 +30,7 @@ public class CategoriesController(ICategoryService service) : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = ProductPolicies.Write)]
     public async Task<IActionResult> Create(CreateCategoryRequest request, CancellationToken ct)
     {
         var result = await service.CreateAsync(request, ct);
@@ -35,12 +38,14 @@ public class CategoriesController(ICategoryService service) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = ProductPolicies.Write)]
     public async Task<IActionResult> Update(Guid id, UpdateCategoryRequest request, CancellationToken ct)
     {
         return Ok(ApiResponse.Ok(await service.UpdateAsync(id, request, ct), ApiMeta.From(HttpContext)));
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = ProductPolicies.Write)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await service.DeleteAsync(id, ct);

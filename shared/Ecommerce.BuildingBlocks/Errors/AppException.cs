@@ -23,4 +23,7 @@ public class AppException(string errorCode, int statusCode, string message, obje
 
     public static AppException Validation(string message, object? details = null) =>
         new(ErrorCodes.ValidationError, StatusCodes.Status400BadRequest, message, details);
+
+    public static AppException Unauthorized(string errorCode, string message, object? details = null) =>
+       new(errorCode, StatusCodes.Status401Unauthorized, message, details);
 }

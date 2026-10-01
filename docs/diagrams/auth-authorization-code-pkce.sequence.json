@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "authorization_code + PKCE - từ cookie session sang token session",
+    "output": "auth-authorization-code-pkce.html",
+    "quality_profile": "showcase",
+    "column_fit": "spread",
+    "viewBox": [
+      1400,
+      800
+    ],
+    "views": [
+      {
+        "id": "challenge",
+        "label": "Challenge",
+        "focus": [
+          "browser",
+          "authctrl",
+          "login"
+        ],
+        "note": "Chưa có cookie nên /connect/authorize trả về Challenge và đẩy sang Razor Page."
+      },
+      {
+        "id": "cookie-session",
+        "label": "Cookie session",
+        "focus": [
+          "login",
+          "userservice",
+          "pg",
+          "browser"
+        ],
+        "note": "Xác thực bằng bcrypt rồi SignInAsync đặt cookie ecom.auth."
+      },
+      {
+        "id": "bridge",
+        "label": "Bắc cầu",
+        "focus": [
+          "browser",
+          "authctrl",
+          "userservice",
+          "openiddict"
+        ],
+        "note": "Cookie chứng minh người dùng, OpenIddict dựng identity và phát authorization code."
+      },
+      {
+        "id": "token-exchange",
+        "label": "Đổi token",
+        "focus": [
+          "browser",
+          "openiddict",
+          "pg"
+        ],
+        "note": "code + code_verifier đổi lấy access_token và refresh_token."
+      }
+    ],
+    "subtitle": "Cookie-session và token-session là hai hệ thống identity riêng, bắc cầu tại /connect/authorize"
+  },
+  "participants": [
+    {
+      "id": "browser",
+      "type": "external",
+      "label": "Browser"
+    },
+    {
+      "id": "login",
+      "type": "frontend",
+      "label": "Login Page"
+    },
+    {
+      "id": "authctrl",
+      "type": "backend",
+      "label": "AuthorizationController"
+    },
+    {
+      "id": "userservice",
+      "type": "backend",
+      "label": "IUserService"
+    },
+    {
+      "id": "openiddict",
+      "type": "security",
+      "label": "OpenIddict"
+    },
+    {
+      "id": "pg",
+      "type": "database",
+      "label": "Postgres"
+    }
+  ],
+  "segments": [
+    {
+      "from": 170,
+      "to": 233,
+      "label": "1 · Chưa xác thực"
+    },
+    {
+      "from": 261,
+      "to": 477,
+      "label": "2 · Cookie session"
+    },
+    {
+      "from": 485,
+      "to": 645,
+      "label": "3 · Bắc cầu"
+    },
+    {
+      "from": 653,
+      "to": 729,
+      "label": "4 · Token session"
+    }
+  ],
+  "messages": [
+    {
+      "id": "authorize-1",
+      "from": "browser",
+      "to": "authctrl",
+      "y": 190,
+      "label": "GET /connect/authorize + code_challenge (S256)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "challenge",
+      "from": "authctrl",
+      "to": "browser",
+      "y": 218,
+      "label": "chưa có cookie - Challenge 302 tới /Account/Login",
+      "variant": "return"
+    },
+    {
+      "id": "post-login",
+      "from": "browser",
+      "to": "login",
+      "y": 266,
+      "label": "POST login (email + password)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "validate",
+      "from": "login",
+      "to": "userservice",
+      "y": 294,
+      "label": "ValidateCredentialsAsync",
+      "variant": "security"
+    },
+    {
+      "id": "bcrypt",
+      "from": "userservice",
+      "to": "pg",
+      "y": 322,
+      "label": "đọc user, bcrypt verify"
+    },
+    {
+      "id": "user-row",
+      "from": "pg",
+      "to": "userservice",
+      "y": 350,
+      "label": "user row",
+      "variant": "return"
+    },
+    {
+      "id": "last-login",
+      "from": "userservice",
+      "to": "pg",
+      "y": 378,
+      "label": "cập nhật LastLoginAt",
+      "variant": "dashed"
+    },
+    {
+      "id": "creds-ok",
+      "from": "userservice",
+      "to": "login",
+      "y": 406,
+      "label": "credentials hợp lệ",
+      "variant": "return"
+    },
+    {
+      "id": "signin-cookie",
+      "from": "login",
+      "to": "browser",
+      "y": 434,
+      "label": "SignInAsync - Set-Cookie ecom.auth",
+      "variant": "security"
+    },
+    {
+      "id": "local-redirect",
+      "from": "login",
+      "to": "browser",
+      "y": 462,
+      "label": "LocalRedirect về /connect/authorize",
+      "variant": "return"
+    },
+    {
+      "id": "authorize-2",
+      "from": "browser",
+      "to": "authctrl",
+      "y": 490,
+      "label": "GET /connect/authorize (kèm cookie)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "find-active",
+      "from": "authctrl",
+      "to": "userservice",
+      "y": 518,
+      "label": "FindActiveByIdAsync (sub đọc từ cookie)"
+    },
+    {
+      "id": "read-roles",
+      "from": "userservice",
+      "to": "pg",
+      "y": 546,
+      "label": "đọc user + roles"
+    },
+    {
+      "id": "app-user",
+      "from": "userservice",
+      "to": "authctrl",
+      "y": 574,
+      "label": "AppUser",
+      "variant": "return"
+    },
+    {
+      "id": "build-identity",
+      "from": "authctrl",
+      "to": "openiddict",
+      "y": 602,
+      "label": "BuildIdentity + SignIn (server scheme)",
+      "variant": "security",
+      "note": "claims sub/email/name/role, scopes, resources -> aud, authorizationId, destinations"
+    },
+    {
+      "id": "persist",
+      "from": "openiddict",
+      "to": "pg",
+      "y": 630,
+      "label": "lưu authorization + token"
+    },
+    {
+      "id": "code",
+      "from": "openiddict",
+      "to": "browser",
+      "y": 658,
+      "label": "302 redirect_uri?code=...",
+      "variant": "return"
+    },
+    {
+      "id": "token-request",
+      "from": "browser",
+      "to": "openiddict",
+      "y": 686,
+      "label": "POST /connect/token (code + code_verifier)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "tokens",
+      "from": "openiddict",
+      "to": "browser",
+      "y": 714,
+      "label": "access_token 15 phút + refresh_token 14 ngày",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "authctrl",
+      "from": 185,
+      "to": 223,
+      "type": "backend"
+    },
+    {
+      "participant": "login",
+      "from": 261,
+      "to": 468,
+      "type": "frontend"
+    },
+    {
+      "participant": "userservice",
+      "from": 289,
+      "to": 412,
+      "type": "backend"
+    },
+    {
+      "participant": "pg",
+      "from": 317,
+      "to": 384,
+      "type": "database"
+    },
+    {
+      "participant": "authctrl",
+      "from": 485,
+      "to": 608,
+      "type": "backend"
+    },
+    {
+      "participant": "userservice",
+      "from": 513,
+      "to": 580,
+      "type": "backend"
+    },
+    {
+      "participant": "pg",
+      "from": 541,
+      "to": 552,
+      "type": "database"
+    },
+    {
+      "participant": "openiddict",
+      "from": 597,
+      "to": 720,
+      "type": "security"
+    },
+    {
+      "participant": "pg",
+      "from": 625,
+      "to": 636,
+      "type": "database"
+    }
+  ]
+}

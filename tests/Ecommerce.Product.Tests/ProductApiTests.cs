@@ -9,7 +9,9 @@ namespace Ecommerce.Product.Tests;
 [Collection(ProductApiCollection.Name)]
 public class ProductApiTests(ProductApiFactory factory)
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    // Token Admin + scope product.write: các test dưới đây kiểm nghiệp vụ CRUD,
+    // phần phân quyền được kiểm riêng ở ProductAuthorizationTests.
+    private readonly HttpClient _client = factory.CreateAdminClient();
 
     [Fact]
     public async Task Create_then_get_returns_product_with_slug()

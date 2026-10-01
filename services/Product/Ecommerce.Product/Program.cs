@@ -1,7 +1,9 @@
 using Asp.Versioning;
+using Ecommerce.BuildingBlocks.Auth;
 using Ecommerce.BuildingBlocks.Http;
 using Ecommerce.BuildingBlocks.Middleware;
 using Ecommerce.BuildingBlocks.Persistence.Auditing;
+using Ecommerce.Product.Common;
 using Ecommerce.Product.Data;
 using Ecommerce.Product.Services;
 using Ecommerce.Product.Services.Impl;
@@ -10,6 +12,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
@@ -62,7 +65,25 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Nút "Authorize" trong Swagger UI: dán access token lấy từ Auth service vào là gọi
+    // được các endpoint ghi. Product không tự cấp token nên chỉ cần ô nhập bearer.
+    const string scheme = "bearer";
+
+    options.AddSecurityDefinition(scheme, new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Access token lấy từ POST {Auth}/connect/token. Chỉ dán phần token, không kèm chữ 'Bearer'."
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference(scheme, document)] = []
+    });
+});
 
 builder.Services.AddApiVersioning(o =>
 {
@@ -82,6 +103,19 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.Configure<ApiBehaviorOptions>(o =>
     o.InvalidModelStateResponseFactory = ctx =>
         new BadRequestObjectResult(ValidationResponse.From(ctx.ModelState, ctx.HttpContext)));
+
+// Verify JWT bằng JWKS của Auth. Product không giữ secret nào - chỉ biết một URL.
+builder.Services.AddEcommerceJwtBearer(builder.Configuration, ProductPolicies.Audience);
+
+builder.Services.AddAuthorization(options =>
+{
+    // Vừa phải đúng role, vừa phải có scope: role nói "ai", scope nói "token này được phép làm gì".
+    // Token của một admin nhưng chỉ xin scope product.read thì vẫn không ghi được.
+    options.AddPolicy(ProductPolicies.Write, policy => policy
+        .RequireAuthenticatedUser()
+        .RequireRole(ProductPolicies.AdminRole)
+        .RequireScope(ProductPolicies.WriteScope));
+});
 
 builder.Services.AddScoped<IProductService, ProductServiceImpl>();
 builder.Services.AddScoped<ICategoryService, CategoryServiceImpl>();
@@ -123,6 +157,9 @@ else
 {
     app.UseHttpsRedirection();
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health", new HealthCheckOptions { Predicate = _ => false }); // liveness
